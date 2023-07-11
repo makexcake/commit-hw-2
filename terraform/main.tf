@@ -12,6 +12,7 @@ variable env_name {}
 
 variable "container_image" {}
 variable "container_name" {}
+variable "certificate_arn" {}
 # variable instance_type {}
 # variable linux_ami_id {}
 # variable windows_ami_id {}
@@ -48,7 +49,10 @@ module "ecs-fargate" {
 
   # Container networking settings
   lb_http_ports = { "default_http": { "listener_port": 80, "target_group_port": 3000 } }
+  lb_https_ports = { "default_http": { "listener_port": 443, "target_group_port": 3000 } }
   port_mappings = [ { "containerPort": 3000, "hostPort": 3000, "protocol": "tcp" } ]
+
+  default_certificate_arn = var.certificate_arn
 
   # VPC settings
   private_subnets_ids = module.vpc.private_subnets

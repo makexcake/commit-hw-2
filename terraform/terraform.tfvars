@@ -8,3 +8,6 @@ avail_zones = ["eu-central-1a", "eu-central-1b", "eu-central-1c"]
 # Vars for ecs fargate module
 container_image = "528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:1.0"
 container_name = "hommework-container"
+
+# Self signed certificate arn
+certificate_arn = "arn:aws:acm:eu-central-1:528100219426:certificate/a24bff49-df38-4a21-b4fc-b62b66e69bde"
