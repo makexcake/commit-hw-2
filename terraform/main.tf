@@ -13,9 +13,9 @@ variable env_name {}
 variable "container_image" {}
 variable "container_name" {}
 variable "certificate_arn" {}
-# variable instance_type {}
-# variable linux_ami_id {}
-# variable windows_ami_id {}
+variable instance_type {}
+variable linux_ami_id {}
+variable windows_ami_id {}
 
 
 module "vpc" {
@@ -38,6 +38,39 @@ module "vpc" {
   }
 }
 
+
+# Create linux ec2 instance
+resource "aws_instance" "linux-server" {
+  
+  instance_type = var.instance_type
+  ami = var.linux_ami_id
+  subnet_id = module.vpc.private_subnets[0]
+
+  associate_public_ip_address = false
+
+  tags = {
+    Name = "${var.env_name}-linux-server"
+    scheduled = "true"
+  }
+}
+
+# Create windows ec2 instance
+resource "aws_instance" "windows-server" {
+  
+  instance_type = var.instance_type
+  ami = var.windows_ami_id
+  subnet_id = module.vpc.private_subnets[0]
+
+  associate_public_ip_address = false
+
+  tags = {
+    Name = "${var.env_name}-windows-server"
+    scheduled = "true"
+  }
+}
+
+
+# Fargate module for the app
 module "ecs-fargate" {
   source  = "cn-terraform/ecs-fargate/aws"
   version = "2.0.52"
