@@ -39,6 +39,8 @@ module "vpc" {
 }
 
 
+
+
 # Create linux ec2 instance
 resource "aws_instance" "linux-server" {
   
@@ -68,6 +70,31 @@ resource "aws_instance" "windows-server" {
     scheduled = "true"
   }
 }
+
+########### NOT READY
+# # Event bridge, it will invoke lambda function that will toggle tagged instances (scheduled = true)
+# module "eventbridge" {
+#   source = "terraform-aws-modules/eventbridge/aws"
+
+#   create_bus = false
+
+#   rules = {
+#     crons = {
+#       description         = "Trigger start instance lambda"
+#       schedule_expression = "rate(5 minutes)"
+#     }
+#   }
+
+#   targets = {
+#     crons = [
+#       {
+#         name  = "lambda-loves-cron"
+#         arn   = "arn:aws:lambda:ap-southeast-1:135367859851:function:resolved-penguin-lambda"
+#         input = jsonencode({"job": "cron-by-rate"})
+#       }
+#     ]
+#   }
+# }
 
 
 # Fargate module for the app

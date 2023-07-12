@@ -15,13 +15,11 @@ def stop_scheduled_instances():
     for instance in instances['Reservations'][0]['Instances']:
         instance_id = instance['InstanceId']
         ec2.stop_instances(InstanceIds=[instance_id])
-        print('signal')
     
     
 
 def lambda_handler(event, context):
     
     stop_scheduled_instances()
-    print ('all instances stopped')
 
 lambda_handler(1,1)
