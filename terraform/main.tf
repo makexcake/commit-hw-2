@@ -71,63 +71,69 @@ resource "aws_instance" "windows-server" {
   }
 }
 
-########### NOT READY
-# # Event bridge, it will invoke lambda function that will toggle tagged instances (scheduled = true)
-# module "eventbridge" {
-#   source = "terraform-aws-modules/eventbridge/aws"
 
-#   create_bus = false
+# Event bridge, it will invoke lambda function that will 
+# start and stop instances with the tag "scheduled" = "true"
+module "eventbridge_start" {
+  source = "terraform-aws-modules/eventbridge/aws"
 
-#   rules = {
-#     crons = {
-#       description         = "Trigger start instance lambda"
-#       schedule_expression = "rate(5 minutes)"
-#     }
-#   }
+  bus_name = "ec2-start" # "default" bus already support schedule_expression in rules
 
-#   targets = {
-#     crons = [
-#       {
-#         name  = "lambda-loves-cron"
-#         arn   = "arn:aws:lambda:ap-southeast-1:135367859851:function:resolved-penguin-lambda"
-#         input = jsonencode({"job": "cron-by-rate"})
-#       }
-#     ]
-#   }
-# }
+  attach_lambda_policy = true
+  lambda_target_arns   = ["arn:aws:lambda:eu-central-1:528100219426:function:start-tagged-ec2",
+                          "arn:aws:lambda:eu-central-1:528100219426:function:stop-tagged-ec2"]
 
-
-# Fargate module for the app
-module "ecs-fargate" {
-  source  = "cn-terraform/ecs-fargate/aws"
-  version = "2.0.52"
-
-  # Container settings
-  container_image = var.container_image
-  container_name = var.container_name
-  name_prefix = var.env_name
-
-  # Container networking settings
-  lb_http_ports = { "default_http": { "listener_port": 80, "target_group_port": 3000 } }
-  lb_https_ports = { "default_http": { "listener_port": 443, "target_group_port": 3000 } }
-  port_mappings = [ { "containerPort": 3000, "hostPort": 3000, "protocol": "tcp" } ]
-
-  default_certificate_arn = var.certificate_arn
-
-  # VPC settings
-  private_subnets_ids = module.vpc.private_subnets
-  public_subnets_ids = module.vpc.public_subnets
-  vpc_id = module.vpc.vpc_id
-
-
-
-  enable_s3_logs = false
-
-    tags = {
-    Terraform = "true"
-    Environment = var.env_name
+  schedules = {
+    lambda-cron-start = {
+      description         = "Trigger for a Lambda"
+      schedule_expression = "cron(45 12 ? * SUN-FRI *)"
+      timezone            = "Asia/Jerusalem"
+      arn                 = "arn:aws:lambda:eu-central-1:528100219426:function:start-tagged-ec2"
+      input               = jsonencode({ "job" : "cron-by-tod" })
+    },
+      lambda-cron-stop = {
+      description         = "Trigger for a Lambda"
+      schedule_expression = "cron(50 12 ? * SUN-FRI *)" # "cron(30 13 ? * SUN-FRI *)"
+      timezone            = "Asia/Jerusalem"
+      arn                 = "arn:aws:lambda:eu-central-1:528100219426:function:stop-tagged-ec2"
+      input               = jsonencode({ "job" : "cron-by-tod" })
+    }
   }
 }
+
+
+
+# # Fargate module for the app
+# module "ecs-fargate" {
+#   source  = "cn-terraform/ecs-fargate/aws"
+#   version = "2.0.52"
+
+#   # Container settings
+#   container_image = var.container_image
+#   container_name = var.container_name
+#   name_prefix = var.env_name
+
+#   # Container networking settings
+#   lb_http_ports = { "default_http": { "listener_port": 80, "target_group_port": 3000 } }
+#   lb_https_ports = { "default_http": { "listener_port": 443, "target_group_port": 3000 } }
+#   port_mappings = [ { "containerPort": 3000, "hostPort": 3000, "protocol": "tcp" } ]
+
+#   default_certificate_arn = var.certificate_arn
+
+#   # VPC settings
+#   private_subnets_ids = module.vpc.private_subnets
+#   public_subnets_ids = module.vpc.public_subnets
+#   vpc_id = module.vpc.vpc_id
+
+
+
+#   enable_s3_logs = false
+
+#     tags = {
+#     Terraform = "true"
+#     Environment = var.env_name
+#   }
+# }
 
 
 
