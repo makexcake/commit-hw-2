@@ -84,16 +84,19 @@ module "eventbridge_start" {
                           "arn:aws:lambda:eu-central-1:528100219426:function:stop-tagged-ec2"]
 
   schedules = {
+    # invoke start instance lambda function at 13:00
     lambda-cron-start = {
       description         = "Trigger for a Lambda"
-      schedule_expression = "cron(45 12 ? * SUN-FRI *)"
+      schedule_expression = "cron(00 13 ? * SUN-FRI *)"
       timezone            = "Asia/Jerusalem"
       arn                 = "arn:aws:lambda:eu-central-1:528100219426:function:start-tagged-ec2"
       input               = jsonencode({ "job" : "cron-by-tod" })
     },
-      lambda-cron-stop = {
+    
+    # invoke stop instance lambda function at 13:30
+    lambda-cron-stop = {
       description         = "Trigger for a Lambda"
-      schedule_expression = "cron(50 12 ? * SUN-FRI *)" # "cron(30 13 ? * SUN-FRI *)"
+      schedule_expression = "cron(30 13 ? * SUN-FRI *)" # "cron(30 13 ? * SUN-FRI *)"
       timezone            = "Asia/Jerusalem"
       arn                 = "arn:aws:lambda:eu-central-1:528100219426:function:stop-tagged-ec2"
       input               = jsonencode({ "job" : "cron-by-tod" })
