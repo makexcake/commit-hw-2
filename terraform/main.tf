@@ -27,6 +27,7 @@ module "vpc" {
 
   azs             = var.avail_zones
   private_subnets = var.subnets_cidr
+  # ALB must be in a public subnet
   public_subnets = var.pub_subnets_cidr
 
   enable_nat_gateway = false
@@ -106,37 +107,103 @@ module "eventbridge_start" {
 
 
 
-# # Fargate module for the app
-# module "ecs-fargate" {
-#   source  = "cn-terraform/ecs-fargate/aws"
-#   version = "2.0.52"
+# # Security groups for Fargate and ALB
+# resource "aws_security_group" "fargate-sg" {
+#   name        = "${var.env_name}-fargate-sg"
+#   description = "Allow TLS inbound traffic"
+#   vpc_id      = module.vpc.vpc_id
 
-#   # Container settings
-#   container_image = var.container_image
-#   container_name = var.container_name
-#   name_prefix = var.env_name
+#   ingress {
+#     description = "health checks from ALB"
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "tcp"
+#     security_groups = [aws_security_group.alb-sg.id]
+#   }
 
-#   # Container networking settings
-#   lb_http_ports = { "default_http": { "listener_port": 80, "target_group_port": 3000 } }
-#   lb_https_ports = { "default_http": { "listener_port": 443, "target_group_port": 3000 } }
-#   port_mappings = [ { "containerPort": 3000, "hostPort": 3000, "protocol": "tcp" } ]
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
 
-#   default_certificate_arn = var.certificate_arn
-
-#   # VPC settings
-#   private_subnets_ids = module.vpc.private_subnets
-#   public_subnets_ids = module.vpc.public_subnets
-#   vpc_id = module.vpc.vpc_id
-
-
-
-#   enable_s3_logs = false
-
-#     tags = {
-#     Terraform = "true"
-#     Environment = var.env_name
+#   tags = {
+#     Name = "${var.env_name}-fargate-sg"
 #   }
 # }
+
+# resource "aws_security_group" "alb-sg" {
+#   name        = "${var.env_name}-alb-sg"
+#   description = "Allow TLS and HTTP inbound traffic"
+#   vpc_id      = module.vpc.vpc_id
+
+#   ingress {
+#     description = "TLS from VPC"
+#     from_port   = 443
+#     to_port     = 443
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+
+#     ingress {
+#     description = "TLS from VPC"
+#     from_port   = 80
+#     to_port     = 80
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+
+#   tags = {
+#     Name = "${var.env_name}-alb-sg"
+#   }
+# }
+
+
+# Fargate module for the app
+module "ecs-fargate" {
+  source  = "cn-terraform/ecs-fargate/aws"
+  version = "2.0.52"
+
+  # Container settings
+  container_image = var.container_image
+  container_name = var.container_name
+  name_prefix = var.env_name
+
+  # Container networking settings
+  lb_http_ports = { "default_http": { "listener_port": 80, "target_group_port": 3000 } }
+  lb_https_ports = { "default_http": { "listener_port": 443, "target_group_port": 3000 } }
+  port_mappings = [ { "containerPort": 3000, "hostPort": 3000, "protocol": "tcp" } ]
+
+  # Security groups for Fargate cluster and ALB
+  # lb_security_groups = [aws_security_group.alb-sg.id]
+  # ecs_service_security_groups = [aws_security_group.fargate-sg.id]
+
+  # My very own self signed certificate
+  default_certificate_arn = var.certificate_arn
+
+  # VPC settings
+  private_subnets_ids = module.vpc.private_subnets
+  public_subnets_ids = module.vpc.public_subnets
+  vpc_id = module.vpc.vpc_id
+
+  lb_target_group_health_check_enabled = false
+  assign_public_ip = true
+
+  enable_s3_logs = false
+
+    tags = {
+    Terraform = "true"
+    Environment = var.env_name
+  }
+}
 
 
 
