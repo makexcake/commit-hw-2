@@ -107,64 +107,6 @@ module "eventbridge_start" {
 
 
 
-# # Security groups for Fargate and ALB
-# resource "aws_security_group" "fargate-sg" {
-#   name        = "${var.env_name}-fargate-sg"
-#   description = "Allow TLS inbound traffic"
-#   vpc_id      = module.vpc.vpc_id
-
-#   ingress {
-#     description = "health checks from ALB"
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "tcp"
-#     security_groups = [aws_security_group.alb-sg.id]
-#   }
-
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-
-#   tags = {
-#     Name = "${var.env_name}-fargate-sg"
-#   }
-# }
-
-# resource "aws_security_group" "alb-sg" {
-#   name        = "${var.env_name}-alb-sg"
-#   description = "Allow TLS and HTTP inbound traffic"
-#   vpc_id      = module.vpc.vpc_id
-
-#   ingress {
-#     description = "TLS from VPC"
-#     from_port   = 443
-#     to_port     = 443
-#     protocol    = "tcp"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-
-#     ingress {
-#     description = "TLS from VPC"
-#     from_port   = 80
-#     to_port     = 80
-#     protocol    = "tcp"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-
-#   tags = {
-#     Name = "${var.env_name}-alb-sg"
-#   }
-# }
 
 
 # Fargate module for the app
@@ -193,9 +135,24 @@ module "ecs-fargate" {
   private_subnets_ids = module.vpc.private_subnets
   public_subnets_ids = module.vpc.public_subnets
   vpc_id = module.vpc.vpc_id
-
-  lb_target_group_health_check_enabled = false
   assign_public_ip = true
+
+  # # Health checks configuration
+  # healthcheck = object({
+  #   command     = list(string)
+  #   retries     = 3
+  #   timeout     = 60
+  #   interval    = 60
+  #   startPeriod = 60
+  # })
+
+  health_check_grace_period_seconds = 60
+  lb_target_group_health_check_timeout = 60
+  lb_target_group_health_check_healthy_threshold = 2
+  lb_target_group_health_check_unhealthy_threshold = 3
+  lb_target_group_health_check_interval = 120
+
+
 
   enable_s3_logs = false
 
