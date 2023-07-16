@@ -27,8 +27,7 @@ module "vpc" {
 
   azs             = var.avail_zones
   private_subnets = var.subnets_cidr
-  # ALB must be in a public subnet
-  public_subnets = var.pub_subnets_cidr
+  public_subnets = var.pub_subnets_cidr  # ALB must be in a public subnet
 
   enable_nat_gateway = false
   enable_vpn_gateway = false
@@ -137,14 +136,6 @@ module "ecs-fargate" {
   vpc_id = module.vpc.vpc_id
   assign_public_ip = true
 
-  # # Health checks configuration
-  # healthcheck = object({
-  #   command     = list(string)
-  #   retries     = 3
-  #   timeout     = 60
-  #   interval    = 60
-  #   startPeriod = 60
-  # })
 
   health_check_grace_period_seconds = 60
   lb_target_group_health_check_timeout = 60
