@@ -12,3 +12,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+terraform/.terraform.lock.hcl
+terraform/.terraform.lock.hcl
+terraform-prototype/.terraform.lock.hcl
+terraform/.terraform.lock.hcl
