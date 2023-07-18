@@ -1,9 +1,6 @@
 version: 0.2
 
 phases:
-  install:
-    runtime-versions:
-      docker: 18
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
@@ -11,12 +8,16 @@ phases:
   build:
     commands:
       - echo Building the Docker image...
-      - docker build -t 528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:latest .
+      - |
+        IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+        IMAGE_URI=528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:$IMAGE_TAG
+        docker build -t $IMAGE_URI .
       - echo Pushing the Docker image to Amazon ECR...
-      - docker push 528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:latest
+      - docker push $IMAGE_URI
   post_build:
     commands:
       - echo Build completed on `date`
+      - echo $IMAGE_URI > image_uri.txt
 artifacts:
   files:
-    - '**/*'
+    - image_uri.txt
