@@ -24,4 +24,4 @@ phases:
       - echo "528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:3.0" > image_uri.txt
 artifacts:
   files:
-    - image_uri.txt
+    - '**/*' # image_uri.txt
