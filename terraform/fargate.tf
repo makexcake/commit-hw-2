@@ -117,9 +117,12 @@ resource "aws_ecs_cluster" "ecs-cluster" {
 
 # Task definition for the app
 resource "aws_ecs_task_definition" "hw-app-task-definition" {
+  
   family = "service"
   requires_compatibilities = ["FARGATE"]
   network_mode = "awsvpc"
+  execution_role_arn = "arn:aws:iam::528100219426:role/ecsTaskExecutionRole"
+
 
   runtime_platform {
     operating_system_family = "LINUX"
@@ -132,7 +135,7 @@ resource "aws_ecs_task_definition" "hw-app-task-definition" {
    container_definitions = <<-JSON
     [{
         "name": "homework-app",
-        "image": "makecake/homework-app:2.0",
+        "image": "${var.container_image}",
         "essential": true,
         "portMappings": [
         {

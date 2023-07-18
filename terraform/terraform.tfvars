@@ -11,7 +11,7 @@ linux_ami_id = "ami-0aea56f3589631913"    # amazon linux 2
 windows_ami_id = "ami-02076a196031326b2"  # windows server 2019 base
 
 # Vars for ecs fargate module "makecake/node-app:1.0" 
-container_image = "makecake/homework-app:1.0"   # "528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:1.0"
+container_image =  "528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:latest" 
 container_name = "hommework-container"
 
 # Self signed certificate arn
