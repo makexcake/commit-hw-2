@@ -56,3 +56,4 @@ phases:
 artifacts:
   files:
     - image_uri.txt
+    - imagedefinitions.json
