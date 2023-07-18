@@ -1,0 +1,9 @@
+[
+    {
+      "name": "homework-app",
+      "imageUri": "528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:latest",
+      "taskDefinition": "arn:aws:ecs:eu-central-1:528100219426:task-definition/service:16",
+      "deploymentMethod": "ECS"
+    }
+  ]
+  
