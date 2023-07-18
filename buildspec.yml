@@ -15,15 +15,13 @@ phases:
   build:
     commands:
       - echo Building the Docker image...
-      - export IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - export IMAGE_URI=528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:$IMAGE_TAG
-      - docker build -t $IMAGE_URI .
+      - docker build -t 528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:latest .
       - echo Pushing the Docker image to Amazon ECR...
-      - docker push $IMAGE_URI
+      - docker push 528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:latest
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo $IMAGE_URI > image_uri.txt
+      - echo "528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:latest" > image_uri.txt
 artifacts:
   files:
     - image_uri.txt
