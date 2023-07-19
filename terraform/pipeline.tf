@@ -1,45 +1,40 @@
-# # Connections, should be completed in AWS console
-# resource "aws_codestarconnections_connection" "hw-app-github-connection" {
-#   name          =  "${var.env_name}-github-connection"
-#   provider_type = "GitHub"
-# }
+# The following tf code provisions AWS codePipeline with the 
+# required resources and sets it to track changes 
+# in the application branch of the repository.
 
 # Build project, it will be used by the pipeline below
 resource "aws_codebuild_project" "hw-app-codebuild" {
-    name           = "${var.env_name}-codebuild-project"
-    description    = "test_codebuild_project_cache"
-    build_timeout  = "5"
-    queued_timeout = "5"
-    
-    service_role = "arn:aws:iam::528100219426:role/service-role/codebuild-test-hw-app-service-role" 
-    
-    artifacts {
-      type = "CODEPIPELINE"
-    }
-    
-    environment {
-      compute_type                = "BUILD_GENERAL1_SMALL"
-      image                       = "aws/codebuild/standard:5.0"
-      type                        = "LINUX_CONTAINER"
-      image_pull_credentials_type = "CODEBUILD"
-      privileged_mode = true
-    }
+  name           = "${var.env_name}-codebuild-project"
+  description    = "test_codebuild_project_cache"
+  build_timeout  = "5"
+  queued_timeout = "5"
+  
+  service_role = "arn:aws:iam::528100219426:role/service-role/codebuild-test-hw-app-service-role" 
+  
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+  
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode = true
+  }
 
-    source {
-    type            = "CODEPIPELINE"
-    buildspec       = "buildspec.yml"
-    git_clone_depth = 1
-    }
+  source {
+  type            = "CODEPIPELINE"
+  buildspec       = "buildspec.yml"
+  git_clone_depth = 1
+  }
 
-    
-    source_version = "feature/application"
-    tags = {
-      Environment = "Test"
-    }
+  
+  source_version = "feature/application"
+  tags = {
+    Name = "${var.env_name}-codebuild-projecr"
+  }
 }
-
-
-### Pipeline Stuff ###
 
 # GitHub token
 data "aws_ssm_parameter" "github-token" {
@@ -49,6 +44,9 @@ data "aws_ssm_parameter" "github-token" {
 resource "aws_s3_bucket" "bucket-for-pipeline" {
   bucket = "${var.env_name}-pipeline-bucket-123123"
 
+  tags = {
+    Name = "${var.env_name}-pipeline-bucket"
+  }
 }
 
 # Pipeline 
@@ -117,4 +115,10 @@ resource "aws_codepipeline" "my_pipeline" {
       }
     }
   }
+
+  tags = {
+    Name = "${var.env_name}-codePipeline"
+  }  
 }
+
+

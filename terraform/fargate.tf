@@ -1,4 +1,5 @@
-# This tf file contains configuration of the app cluster
+# This tf code provisions ECS cluster that runs two replicas of 
+# the homework app and an ALB.
 
 # Defining security groups for app and alb
 resource "aws_security_group" "alb-sg" {

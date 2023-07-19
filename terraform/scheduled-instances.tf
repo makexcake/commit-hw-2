@@ -1,5 +1,6 @@
 # Create windows and linux EC2 instances with event bridge 
-# that uses lambda function to schedule instances work time.
+# that uses lambda function to start and stop tagged instances
+# on desired time (from 13:00 to 13:30).
 
 # Create linux ec2 instance
 resource "aws_instance" "linux-server" {
