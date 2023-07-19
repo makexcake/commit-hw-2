@@ -35,7 +35,7 @@ resource "aws_instance" "windows-server" {
 
 # Event bridge, it will invoke lambda function that will 
 # start and stop instances with the tag "scheduled" = "true"
-module "eventbridge_start" {
+module "eventbridge-instance-schedule" {
   source = "terraform-aws-modules/eventbridge/aws"
 
   bus_name = "ec2-start" # "default" bus already support schedule_expression in rules
