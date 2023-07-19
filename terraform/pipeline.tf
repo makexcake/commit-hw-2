@@ -1,150 +1,120 @@
-# resource "aws_codepipeline" "codepipeline" {
-#   name     = "tf-test-pipeline"
-#   role_arn = aws_iam_role.codepipeline_role.arn
-
-#   artifact_store {
-#     location = aws_s3_bucket.codepipeline_bucket.bucket
-#     type     = "S3"
-
-#     encryption_key {
-#       id   = data.aws_kms_alias.s3kmskey.arn
-#       type = "KMS"
-#     }
-#   }
-
-#   stage {
-#     name = "Source"
-
-#     action {
-#       name             = "Source"
-#       category         = "Source"
-#       owner            = "AWS"
-#       provider         = "CodeStarSourceConnection"
-#       version          = "1"
-#       output_artifacts = ["source_output"]
-
-#       configuration = {
-#         ConnectionArn    = aws_codestarconnections_connection.example.arn
-#         FullRepositoryId = "my-organization/example"
-#         BranchName       = "main"
-#       }
-#     }
-#   }
-
-#   stage {
-#     name = "Build"
-
-#     action {
-#       name             = "Build"
-#       category         = "Build"
-#       owner            = "AWS"
-#       provider         = "CodeBuild"
-#       input_artifacts  = ["source_output"]
-#       output_artifacts = ["build_output"]
-#       version          = "1"
-
-#       configuration = {
-#         ProjectName = "test"
-#       }
-#     }
-#   }
-
-#   stage {
-#     name = "Deploy"
-
-#     action {
-#       name            = "Deploy"
-#       category        = "Deploy"
-#       owner           = "AWS"
-#       provider        = "CloudFormation"
-#       input_artifacts = ["build_output"]
-#       version         = "1"
-
-#       configuration = {
-#         ActionMode     = "REPLACE_ON_FAILURE"
-#         Capabilities   = "CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM"
-#         OutputFileName = "CreateStackOutput.json"
-#         StackName      = "MyStack"
-#         TemplatePath   = "build_output::sam-templated.yaml"
-#       }
-#     }
-#   }
-# }
-
-# resource "aws_codestarconnections_connection" "example" {
-#   name          = "example-connection"
+# # Connections, should be completed in AWS console
+# resource "aws_codestarconnections_connection" "hw-app-github-connection" {
+#   name          =  "${var.env_name}-github-connection"
 #   provider_type = "GitHub"
 # }
 
-# resource "aws_s3_bucket" "codepipeline_bucket" {
-#   bucket = "test-bucket"
-# }
+# Build project, it will be used by the pipeline below
+resource "aws_codebuild_project" "hw-app-codebuild" {
+    name           = "${var.env_name}-codebuild-project"
+    description    = "test_codebuild_project_cache"
+    build_timeout  = "5"
+    queued_timeout = "5"
+    
+    service_role = "arn:aws:iam::528100219426:role/service-role/codebuild-test-hw-app-service-role" 
+    
+    artifacts {
+      type = "CODEPIPELINE"
+    }
+    
+    environment {
+      compute_type                = "BUILD_GENERAL1_SMALL"
+      image                       = "aws/codebuild/standard:5.0"
+      type                        = "LINUX_CONTAINER"
+      image_pull_credentials_type = "CODEBUILD"
+      privileged_mode = true
+    }
 
-# resource "aws_s3_bucket_acl" "codepipeline_bucket_acl" {
-#   bucket = aws_s3_bucket.codepipeline_bucket.id
-#   acl    = "private"
-# }
+    source {
+    type            = "CODEPIPELINE"
+    buildspec       = "buildspec.yml"
+    git_clone_depth = 1
+    }
 
-# data "aws_iam_policy_document" "assume_role" {
-#   statement {
-#     effect = "Allow"
+    
+    source_version = "feature/application"
+    tags = {
+      Environment = "Test"
+    }
+}
 
-#     principals {
-#       type        = "Service"
-#       identifiers = ["codepipeline.amazonaws.com"]
-#     }
 
-#     actions = ["sts:AssumeRole"]
-#   }
-# }
+### Pipeline Stuff ###
 
-# resource "aws_iam_role" "codepipeline_role" {
-#   name               = "test-role"
-#   assume_role_policy = data.aws_iam_policy_document.assume_role.json
-# }
+# GitHub token
+data "aws_ssm_parameter" "github-token" {
+    name = "g-auth-token"
+}
 
-# data "aws_iam_policy_document" "codepipeline_policy" {
-#   statement {
-#     effect = "Allow"
+resource "aws_s3_bucket" "bucket-for-pipeline" {
+  bucket = "${var.env_name}-pipeline-bucket-123123"
 
-#     actions = [
-#       "s3:GetObject",
-#       "s3:GetObjectVersion",
-#       "s3:GetBucketVersioning",
-#       "s3:PutObjectAcl",
-#       "s3:PutObject",
-#     ]
+}
 
-#     resources = [
-#       aws_s3_bucket.codepipeline_bucket.arn,
-#       "${aws_s3_bucket.codepipeline_bucket.arn}/*"
-#     ]
-#   }
+# Pipeline 
+resource "aws_codepipeline" "my_pipeline" {
+  name     = "my-pipeline"
+  role_arn = "arn:aws:iam::528100219426:role/service-role/test-service-role-codepipeline"
 
-#   statement {
-#     effect    = "Allow"
-#     actions   = ["codestar-connections:UseConnection"]
-#     resources = [aws_codestarconnections_connection.example.arn]
-#   }
+  artifact_store {
+    location = "${var.env_name}-pipeline-bucket-123123"
+    type     = "S3"
+  }
 
-#   statement {
-#     effect = "Allow"
+  stage {
+    name = "Source"
 
-#     actions = [
-#       "codebuild:BatchGetBuilds",
-#       "codebuild:StartBuild",
-#     ]
+    action {
+      name             = "SourceAction"
+      category         = "Source"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
+      version          = "1"
+      output_artifacts = ["SourceArtifact"]
 
-#     resources = ["*"]
-#   }
-# }
+      configuration = {
+        ConnectionArn = "arn:aws:codestar-connections:eu-central-1:528100219426:connection/71c0c6d0-c8cb-4f2b-8ec4-3f0beeda3399"
+        FullRepositoryId = "makexcake/commit-hw-2"  # "https://github.com/makexcake/commit-hw-2.git"
+        BranchName  = "feature/application"
+      }
+    }
+  }
 
-# resource "aws_iam_role_policy" "codepipeline_policy" {
-#   name   = "codepipeline_policy"
-#   role   = aws_iam_role.codepipeline_role.id
-#   policy = data.aws_iam_policy_document.codepipeline_policy.json
-# }
+  stage {
+    name = "Build"
 
-# data "aws_kms_alias" "s3kmskey" {
-#   name = "alias/myKmsKey"
-# }
+    action {
+      name             = "BuildAction"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      version          = "1"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["BuildArtifact"]
+
+      configuration = {
+        ProjectName = "${var.env_name}-codebuild-project"
+      }
+    }
+  }
+
+  stage {
+    name = "Deploy"
+
+    action {
+      name             = "DeployAction"
+      category         = "Deploy"
+      owner            = "AWS"
+      provider         = "ECS"
+      version          = "1"
+      input_artifacts  = ["BuildArtifact"]
+
+      configuration = {
+        ClusterName     = "${var.env_name}-cluster"
+        ServiceName     = "homework-app"
+        FileName        = "imagedefinitions.json"
+        #RoleArn         = "arn:aws:iam::528100219426:role/ecsTaskExecutionRole"
+      }
+    }
+  }
+}
