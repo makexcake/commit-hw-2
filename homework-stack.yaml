@@ -57,6 +57,8 @@ Resources:
   # Subnets
   PublicSubnet1:
     Type: 'AWS::EC2::Subnet'
+    DependsOn: 
+      - MainVpc
     Properties:
       VpcId: !Ref MainVpc
       CidrBlock: '10.0.0.0/24'
@@ -68,6 +70,8 @@ Resources:
 
   PublicSubnet2:
     Type: 'AWS::EC2::Subnet'
+    DependsOn: 
+      - MainVpc
     Properties:
       VpcId: !Ref MainVpc
       CidrBlock: '10.0.1.0/24'
@@ -79,6 +83,8 @@ Resources:
 
   PrivateSubnet1:
     Type: 'AWS::EC2::Subnet'
+    DependsOn: 
+      -  MainVpc
     Properties:
       VpcId: !Ref MainVpc
       CidrBlock: '10.0.2.0/24'
@@ -89,6 +95,8 @@ Resources:
 
   PrivateSubnet2:
     Type: 'AWS::EC2::Subnet'
+    DependsOn: 
+      - MainVpc
     Properties:
       VpcId: !Ref MainVpc
       CidrBlock: '10.0.3.0/24'
@@ -96,6 +104,7 @@ Resources:
       Tags:
         - Key: Name
           Value: PrivateSubnet2
+
   # IGW
   InternetGateway:
     Type: 'AWS::EC2::InternetGateway'
@@ -105,6 +114,8 @@ Resources:
           Value: MyIGW
 
   VPCGatewayAttachment:
+    DependsOn: 
+      - InternetGateway
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:
       VpcId: !Ref MainVpc
@@ -113,6 +124,8 @@ Resources:
   # Route tables
   PublicRouteTable:
     Type: 'AWS::EC2::RouteTable'
+    DependsOn: 
+      - InternetGateway
     Properties:
       VpcId: !Ref MainVpc
       Tags:
@@ -162,6 +175,8 @@ Resources:
   # Security groups for the instances
   InstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
+    DependsOn: 
+      - MainVpc
     Properties:
       GroupDescription: Security group for EC2 instances
       VpcId: !Ref MainVpc
@@ -177,6 +192,8 @@ Resources:
   # EC2 instances with a tag 
   EC2Instance1:
     Type: 'AWS::EC2::Instance'
+    DependsOn: 
+      - InstanceSecurityGroup
     Properties:
       ImageId: !Ref WindowsAMI  
       InstanceType: t2.micro
@@ -189,6 +206,8 @@ Resources:
 
   EC2Instance2:
     Type: 'AWS::EC2::Instance'
+    DependsOn: 
+      - InstanceSecurityGroup
     Properties:
       ImageId: !Ref LinuxAMI  
       InstanceType: t2.micro
@@ -228,6 +247,8 @@ Resources:
   # ALB security group
   AlbSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
+    DependsOn: 
+      - MainVpc
     Properties:
       GroupDescription: 'Security group for Application Load Balancer (ALB)'
       VpcId: !Ref MainVpc
@@ -244,6 +265,8 @@ Resources:
   # Application security group
   AppSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
+    DependsOn: 
+      - MainVpc
     Properties:
       GroupDescription: 'Security group for the application'
       VpcId: !Ref MainVpc  
@@ -255,18 +278,6 @@ Resources:
       SecurityGroupEgress:
         - IpProtocol: '-1'  
           CidrIp: 0.0.0.0/0
-
-  # ALB
-  BestEverALB:
-    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
-    Properties:
-      Name: BestEverALB
-      Scheme: internet-facing
-      Subnets:
-        - !Ref PublicSubnet1
-        - !Ref PublicSubnet2
-      SecurityGroups:
-        - !Ref AlbSecurityGroup
 
   # ALB Target Group
   AppTargetGroup:
@@ -285,9 +296,26 @@ Resources:
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 2
 
+
+  # ALB
+  BestEverALB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    DependsOn: AppTargetGroup
+    Properties:
+      Name: BestEverALB
+      Scheme: internet-facing
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+
   # ALB Listener 
   MyLoadBalancerListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    DependsOn: 
+      - AppTargetGroup
+      - BestEverALB
     Properties:
       LoadBalancerArn: !Ref BestEverALB
       Port: 443
@@ -301,12 +329,16 @@ Resources:
   # ECS Cluster
   BestEverCluster:
     Type: 'AWS::ECS::Cluster'
+    DependsOn: BestEverALB
     Properties:
       ClusterName: BestEverCluster
 
   # Task Definition
   AppTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
+    DependsOn: 
+      - BestEverCluster
+      - BestEverALB
     Properties:
       Family: AppTaskDefinition
       Cpu: '256'
@@ -326,6 +358,11 @@ Resources:
   # Service
   HomeworkAppService:
     Type: 'AWS::ECS::Service'
+    DependsOn: 
+      - AppTaskDefinition
+      - AppTargetGroup
+      - BestEverALB
+      - BestEverCluster
     Properties:
       Cluster: !Ref BestEverCluster  
       ServiceName: HomeworkApp
