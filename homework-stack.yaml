@@ -1,0 +1,347 @@
+# The following template crates the following resources:
+# - VPC with 2 public and 2 private subnets with corresponding routing tables
+# - 2 ec2 instances and an EventBridge rule for starting and stopping the instances 
+#   at the desired hours
+# - ECS Fargate cluster that runs the application with a ALB that load balances
+#   the traffic to the aplication via https protocol.
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Bigass template for homework project'
+
+Parameters:
+  WindowsAMI:
+    Type: String
+    Description: AMI ID of windows 
+    Default: ami-01c903856784dec6a
+
+  LinuxAMI:
+    Type: String
+    Description: AMI ID of linux 
+    Default: ami-0aea56f3589631913
+
+  ContainerImage:
+    Type: String
+    Description: App image URI
+    Default: 528100219426.dkr.ecr.eu-central-1.amazonaws.com/homework-app-2:latest
+
+  ContainerPort:
+    Type: String
+    Description: Container port
+    Default: 3000
+  
+  HostPort: 
+    Type: String
+    Description: Host port
+    Default: 3000
+  
+  TaskExecRole:
+    Type: String
+    Description: Task Execution role ARN
+    Default: arn:aws:iam::528100219426:role/ecsTaskExecutionRole
+
+
+Resources:
+  # VPC
+  MainVpc:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: MainVpc
+
+  # Subnets
+  PublicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MainVpc
+      CidrBlock: '10.0.0.0/24'
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnet1
+
+  PublicSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MainVpc
+      CidrBlock: '10.0.1.0/24'
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnet2
+
+  PrivateSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MainVpc
+      CidrBlock: '10.0.2.0/24'
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet1
+
+  PrivateSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MainVpc
+      CidrBlock: '10.0.3.0/24'
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet2
+  # IGW
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyIGW
+
+  VPCGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref MainVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  # Route tables
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref MainVpc
+      Tags:
+        - Key: Name
+          Value: PublicRouteTable
+
+  PrivateRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref MainVpc
+      Tags:
+        - Key: Name
+          Value: PrivateRouteTable
+
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  # Security groups for the instances
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for EC2 instances
+      VpcId: !Ref MainVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22 
+          ToPort: 22
+          CidrIp: 0.0.0.0/0  
+      SecurityGroupEgress:
+        - IpProtocol: '-1' 
+          CidrIp: 0.0.0.0/0
+
+  # EC2 instances with a tag 
+  EC2Instance1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !Ref WindowsAMI  
+      InstanceType: t2.micro
+      SubnetId: !Ref PrivateSubnet1
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      Tags:
+        - Key: "scheduled"
+          Value: "true"
+
+  EC2Instance2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !Ref LinuxAMI  
+      InstanceType: t2.micro
+      SubnetId: !Ref PrivateSubnet1
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      Tags:
+        - Key: "scheduled"
+          Value: "true"
+
+  # EventBridge cron rules to trigger start instance lambda
+  # Start EC2
+  LambdaStartRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: 'Trigger Lambda function at 13:00'
+      ScheduleExpression: 'cron(0 10 * * ? *)'  # 13:00 UTC +3
+      State: 'ENABLED'
+      Targets:
+        - Arn: arn:aws:lambda:eu-central-1:528100219426:function:start-tagged-ec2
+          Id: 'TargetFunction1'
+
+  # Stop EC2
+  LambdaStopRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: 'Trigger Lambda function at 13:00'
+      ScheduleExpression: 'cron(30 10 * * ? *)'  # 13:30 UTC +3
+      State: 'ENABLED'
+      Targets:
+        - Arn: arn:aws:lambda:eu-central-1:528100219426:function:stop-tagged-ec2
+          Id: 'TargetFunction1'
+
+
+### ECS CLUSTER SECTION ###
+
+  # ALB security group
+  AlbSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Security group for Application Load Balancer (ALB)'
+      VpcId: !Ref MainVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0  
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0  
+
+  # Application security group
+  AppSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Security group for the application'
+      VpcId: !Ref MainVpc  
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !GetAtt AlbSecurityGroup.GroupId  # Allow inbound from AlbSecurityGroup on port 3000
+      SecurityGroupEgress:
+        - IpProtocol: '-1'  
+          CidrIp: 0.0.0.0/0
+
+  # ALB
+  BestEverALB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: BestEverALB
+      Scheme: internet-facing
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+
+  # ALB Target Group
+  AppTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      Name: AppTargetGroup
+      VpcId: !Ref MainVpc  
+      TargetType: ip
+      Protocol: HTTP
+      Port: !Ref HostPort
+      HealthCheckEnabled: true
+      HealthCheckPath: /  
+      HealthCheckPort: traffic-port
+      HealthCheckIntervalSeconds: 80
+      HealthCheckTimeoutSeconds: 60
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+
+  # ALB Listener 
+  MyLoadBalancerListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      LoadBalancerArn: !Ref BestEverALB
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: arn:aws:acm:eu-central-1:528100219426:certificate/a24bff49-df38-4a21-b4fc-b62b66e69bde  # I will parametarize it later
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AppTargetGroup  
+
+  # ECS Cluster
+  BestEverCluster:
+    Type: 'AWS::ECS::Cluster'
+    Properties:
+      ClusterName: BestEverCluster
+
+  # Task Definition
+  AppTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: AppTaskDefinition
+      Cpu: '256'
+      Memory: '512'
+      ExecutionRoleArn: !Ref TaskExecRole 
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ContainerDefinitions:
+        - Name: homework-app
+          Image: !Ref ContainerImage 
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              HostPort: !Ref HostPort
+              Protocol: tcp
+
+  # Service
+  HomeworkAppService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster: !Ref BestEverCluster  
+      ServiceName: HomeworkApp
+      LaunchType: FARGATE
+      DesiredCount: 2
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnet1
+            - !Ref PublicSubnet2
+          SecurityGroups:
+            - !Ref AppSecurityGroup
+      TaskDefinition: !Ref AppTaskDefinition            
+      LoadBalancers:
+        - TargetGroupArn: !Ref AppTargetGroup  
+          ContainerName: homework-app
+          ContainerPort: !Ref ContainerPort
+
+
+
