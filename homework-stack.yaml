@@ -8,6 +8,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Bigass template for homework project'
 
+
+# The default parameters are valid for my aws account for eu-central-1 region
 Parameters:
   WindowsAMI:
     Type: String
