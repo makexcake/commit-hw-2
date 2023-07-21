@@ -53,6 +53,7 @@ resource "aws_s3_bucket" "bucket-for-pipeline" {
 resource "aws_codepipeline" "my_pipeline" {
   name     = "my-pipeline"
   role_arn = "arn:aws:iam::528100219426:role/service-role/test-service-role-codepipeline"
+  depends_on = [ aws_s3_bucket.bucket-for-pipeline ]
 
   artifact_store {
     location = "${var.env_name}-pipeline-bucket-123123"
