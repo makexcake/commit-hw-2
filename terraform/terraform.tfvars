@@ -1,4 +1,5 @@
 # Environment name
+region = "eu-central-1"
 env_name = "commit-hw-tf"
 
 # Vars for VPC module

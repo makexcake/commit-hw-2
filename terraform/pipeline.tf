@@ -43,7 +43,7 @@ data "aws_ssm_parameter" "github-token" {
 
 resource "aws_s3_bucket" "bucket-for-pipeline" {
   bucket = "${var.env_name}-pipeline-bucket-123123"
-
+  force_destroy = true
   tags = {
     Name = "${var.env_name}-pipeline-bucket"
   }

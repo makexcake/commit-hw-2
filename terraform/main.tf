@@ -8,6 +8,9 @@ variable subnets_cidr {}
 variable "pub_subnets_cidr" {}
 variable avail_zones {}
 variable env_name {}
+variable "region" {
+  
+}
 
 
 variable "container_image" {}
@@ -36,6 +39,22 @@ module "vpc" {
     Name = "${var.env_name}-vpc"
   }
 }
+
+# Gateway Endpoint to access s3 bucket NOT via public internet
+resource "aws_vpc_endpoint" "s3_endpoint" {
+  vpc_id       = module.vpc.vpc_id
+  service_name = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type = "Gateway"
+
+  route_table_ids = [ module.vpc.private_route_table_ids[0],
+                      module.vpc.private_route_table_ids[1],
+                      module.vpc.public_route_table_ids[0]]
+
+  tags = {
+    Name = "s3-vpc-endpoint"
+  }
+}
+
 
 
 
