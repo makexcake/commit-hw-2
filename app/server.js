@@ -9,10 +9,14 @@ const app = express();
 AWS.config.update({region:'eu-central-1'});
 const s3 = new AWS.S3();
 
+// Hi Yuri, you are welcome to change the image placeholder
+// to one of the following values and observe the changes after 5 minutes 
+// in the alb link (I'll send it via e-mail)
+// the values commit-logo.jpg, putin-hui.jpg, putin-monke.jpg
 app.get('/image', function (req, res) {
   const s3params = {
     Bucket: 'commit-task-2',
-    Key: 'commit-logo.jpg'
+    Key: 'commit-logo.jpg' // <-- change here
   };
 
   s3.getObject(s3params, (err, data) => {
