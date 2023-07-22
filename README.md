@@ -13,6 +13,7 @@ Branch for homework provisioning infrastructure using CloudFormation.
 * EventBridge rule to trigger the start and stop lambda functions.
 * ALB with https listener that uses my very own certificate (created it via openSSL).
 * ECS Fargate cluster with service that provisions 2 containers.
+* The setup uses SSL Offload which means that the traffic from the internet to ALB use https protocol and from ALB to the continer http.
 
 ### Notes: 
 * Havent succseed in making the app fetching image from s3 in containiarized environment.
