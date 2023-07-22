@@ -7,4 +7,3 @@ On branch push ci/cd pipeline is initiated and after 5 minutes the image on the 
 * buildspec.yml: File with build instruction that is used by AWS CodeBuild
 * imagedefinitions.json: file used by the deployment stage. Contains information about the service.
 
-### Note: I'm the image pull from s3 function is curently doesn't work.
