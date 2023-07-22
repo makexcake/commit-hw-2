@@ -116,7 +116,43 @@ resource "aws_ecs_cluster" "ecs-cluster" {
 
 }
 
-# Task definition for the app
+# # Task definition for the app
+# resource "aws_ecs_task_definition" "hw-app-task-definition" {
+  
+#   family = "service"
+#   requires_compatibilities = ["FARGATE"]
+#   network_mode = "awsvpc"
+#   execution_role_arn = "arn:aws:iam::528100219426:role/ecsTaskExecutionRole"
+
+
+#   runtime_platform {
+#     operating_system_family = "LINUX"
+#     cpu_architecture        = "X86_64"
+#   }
+
+#     cpu = 256
+#     memory = 512
+
+#    container_definitions = <<-JSON
+#     [{
+#         "name": "homework-app",
+#         "image": "${var.container_image}",
+#         "essential": true,
+#         "portMappings": [
+#         {
+#             "containerPort": 3000,
+#             "hostPort": 3000,
+#             "protocol": "tcp"
+#         }
+#         ]
+#     }]
+#    JSON
+#     tags = {
+#         Name = "${var.env_name}-task-definition"
+#     }
+
+# }
+
 resource "aws_ecs_task_definition" "hw-app-task-definition" {
   
   family = "service"
@@ -144,14 +180,25 @@ resource "aws_ecs_task_definition" "hw-app-task-definition" {
             "hostPort": 3000,
             "protocol": "tcp"
         }
+        ],
+        "secrets": [
+          {
+            "name": "AWS_ACCESS_KEY_ID",
+            "valueFrom": "pipi-key-id"  
+          },
+          {
+            "name": "AWS_SECRET_ACCESS_KEY",
+            "valueFrom": "pipi-secret-key"
+          }
         ]
     }]
    JSON
     tags = {
         Name = "${var.env_name}-task-definition"
     }
-
 }
+
+
 # ECS service
 resource "aws_ecs_service" "homework-app-service" {
 
