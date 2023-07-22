@@ -8,7 +8,7 @@ const app = express();
 // Set up AWS SDK and the S3 client
 
 AWS.config.update({
-  region:'eu-central-1', // replace 'your-region' with your AWS region
+  region:'eu-central-1', 
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 });
