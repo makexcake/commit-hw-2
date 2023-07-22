@@ -16,7 +16,6 @@ Branch for homework provisioning infrastructure using CloudFormation.
 * The setup uses SSL Offload which means that the traffic from the internet to ALB use https protocol and from ALB to the continer http.
 
 ### Notes: 
-* Havent succseed in making the app fetching image from s3 in containiarized environment.
 * The template is half portable, with the default values it can be used in eu-central-1 region.
-* Next step is to separate it to nested stacks for modularity and future reuse.
+* Next step is to separate it to nested stacks for nesting and future reuse.
 
