@@ -15,4 +15,3 @@ Branch for homework provisioning infrastructure using Terraform.
 * The setup uses SSL Offload which means that the traffic from the internet to ALB use https protocol and from ALB to the continer http.
 * AWS CodePipeline pipeline with 3 stages: Source, Build, Deploy. In every push to the app branch the pipeline initiated.
 
-### Note: Havent succseed in making the app fetching image from s3 in containiarized environment.
