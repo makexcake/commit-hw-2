@@ -15,3 +15,27 @@ Branch for homework provisioning infrastructure using Terraform.
 * The setup uses SSL Offload which means that the traffic from the internet to ALB use https protocol and from ALB to the continer http.
 * AWS CodePipeline pipeline with 3 stages: Source, Build, Deploy. In every push to the app branch the pipeline initiated.
 
+
+## Deployment Guide
+In order for this tamplate to work in your own environent the following actions are nessesary:
+* Create and upload a certificate to AWS Certificate manager.
+* Create task execution role that can get images from ECR.
+* Create your own private bucket with images.
+* Create ECR repo for the image, build the image first time by yourself and upload it to the registry.
+
+When the following resources are set you are welcome to input your desired values into terraform.tfvars file and input the following command:
+
+```bash
+terraform apply -auto-approve
+```
+
+When the provisioning of the resources is done URL of the ALB will appear. It is accesible only via https. example link:
+```
+https://<alb-name>.<your-region>.elb.amazonaws.com
+```
+
+To destroy the resources input the command:
+```bash
+terraform destroy -auto-approve
+```
+All the resources should automatically be destroyed.
