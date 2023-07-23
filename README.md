@@ -15,6 +15,14 @@ Branch for homework provisioning infrastructure using CloudFormation.
 * ECS Fargate cluster with service that provisions 2 containers.
 * The setup uses SSL Offload which means that the traffic from the internet to ALB use https protocol and from ALB to the continer http.
 
+## Deployment Instructions
+* Create and upload a certificate to AWS Certificate manager. Domain name *.amazonaws.com.
+* Create task execution role that can get images from ECR.
+* Create your own private bucket with images.
+* Create ECR repo for the image, build the image first time by yourself and upload it to the registry.
+* You will need CF role that have premission to create the resources in the template on your behalf.
+* The template can be used via the CloudFormation console or via AWS CLI, just don't forget to adjust the values to your cpecific needs (region, ami, etc.).
+
 ### Notes: 
 * The template is half portable, with the default values it can be used in eu-central-1 region.
 * Next step is to separate it to nested stacks for nesting and future reuse.
