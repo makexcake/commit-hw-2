@@ -23,7 +23,7 @@ const s3 = new AWS.S3();
 app.get('/image', function (req, res) {
   const s3params = {
     Bucket: 'commit-task-2',
-    Key: 'commit-logo.jpg' // <-- change here
+    Key: 'putin-monke.jpg' // <-- change here
   };
 
   s3.getObject(s3params, (err, data) => {
